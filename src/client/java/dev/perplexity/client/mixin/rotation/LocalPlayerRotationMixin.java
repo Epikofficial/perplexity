@@ -1,6 +1,7 @@
 package dev.perplexity.client.mixin.rotation;
 
 import dev.perplexity.client.utils.rotation.RotationManager;
+import dev.perplexity.client.impl.modules.player.SpinBotModule;
 
 import com.llamalad7.mixinextras.injector.ModifyExpressionValue;
 
@@ -18,7 +19,7 @@ public abstract class LocalPlayerRotationMixin {
             method = {"sendPosition", "tick"},
             at = @At(value = "INVOKE", target = "Lnet/minecraft/client/player/LocalPlayer;getYRot()F"))
     private float perplexity$packetYaw(float original) {
-        return RotationManager.packetYaw(original);
+        return SpinBotModule.packetYaw(RotationManager.packetYaw(original));
     }
 
     @ModifyExpressionValue(
@@ -31,6 +32,6 @@ public abstract class LocalPlayerRotationMixin {
     @Inject(method = "sendPosition", at = @At("RETURN"))
     private void perplexity$recordPacketRotation(CallbackInfo callbackInfo) {
         LocalPlayer player = (LocalPlayer) (Object) this;
-        RotationManager.recordMovementPacket(player.getYRot(), player.getXRot());
+        RotationManager.recordMovementPacket(SpinBotModule.packetYaw(player.getYRot()), player.getXRot());
     }
 }

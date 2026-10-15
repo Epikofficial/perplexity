@@ -29,7 +29,7 @@ public final class FlyModule extends Module {
     private final DropdownSetting mode = add(new DropdownSetting("Mode", "Normal",
             "Normal", "Creative"));
     private final NumberSetting speed = add(new NumberSetting("Speed",
-            0.8, 0.1, 3.0, 0.1));
+            0.8, 0.1, 10.0, 0.1));
     private final BooleanSetting noGravity = add(new BooleanSetting("No Gravity",
             true));
     private final BooleanSetting antiKick = add(new BooleanSetting("Anti Kick",

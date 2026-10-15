@@ -262,6 +262,9 @@ public final class Panel {
         }
         float total = GlassTheme.SETTING_SPACING;
         for (Setting setting : module.getSettings()) {
+            if (!setting.isVisible()) {
+                continue;
+            }
             total += rowHeight(setting) + GlassTheme.SETTING_SPACING;
         }
         return total;
@@ -576,6 +579,9 @@ public final class Panel {
                 float settingY = cursor + GlassTheme.MODULE_HEIGHT + GlassTheme.SETTING_SPACING;
                 int index = 0;
                 for (Setting setting : module.getSettings()) {
+                    if (!setting.isVisible()) {
+                        continue;
+                    }
                     float rowHeight = rowHeight(setting);
                     // Rows ease in one after another, sliding up into the space the panel is opening.
                     float start = Math.min(0.6F, index * STAGGER);

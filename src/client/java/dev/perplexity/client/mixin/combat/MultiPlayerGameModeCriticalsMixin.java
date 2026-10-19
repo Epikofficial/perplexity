@@ -21,6 +21,17 @@ public abstract class MultiPlayerGameModeCriticalsMixin {
             ci.cancel();
             return;
         }
-        CriticalsModule.beforeAttack(player, target);
+        if (!ReachModule.beforeAttack(player, target)) {
+            ci.cancel();
+            return;
+        }
+        if (!ReachModule.isClippingAttack()) {
+            CriticalsModule.beforeAttack(player, target);
+        }
+    }
+
+    @Inject(method = "attack", at = @At("RETURN"))
+    private void perplexity$returnAfterClip(Player player, Entity target, CallbackInfo ci) {
+        ReachModule.afterAttack();
     }
 }

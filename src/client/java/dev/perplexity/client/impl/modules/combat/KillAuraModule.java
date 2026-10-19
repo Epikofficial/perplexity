@@ -3,6 +3,7 @@ package dev.perplexity.client.impl.modules.combat;
 import dev.perplexity.client.module.Category;
 import dev.perplexity.client.module.Module;
 import dev.perplexity.client.module.setting.BooleanSetting;
+import dev.perplexity.client.module.setting.ModeSetting;
 import dev.perplexity.client.module.setting.NumberSetting;
 import dev.perplexity.client.utils.Obf;
 
@@ -17,8 +18,12 @@ import net.minecraft.world.entity.player.Player;
 public final class KillAuraModule extends Module {
     private static final Minecraft mc = Minecraft.getInstance();
 
+    private final ModeSetting mode = add(new ModeSetting("Mode", "Standard",
+            "Standard", "Packet Clip"));
     private final NumberSetting range = add(new NumberSetting("Range",
             3.5, 1.0, 6.0, 0.1));
+    private final NumberSetting clipRange = add(new NumberSetting("Clip Range",
+            32.0, 6.0, 128.0, 1.0));
     private final NumberSetting attacksPerSecond = add(new NumberSetting("Attacks Per Second",
             10.0, 1.0, 20.0, 1.0));
     private final BooleanSetting players = add(new BooleanSetting("Players", true));
@@ -32,6 +37,8 @@ public final class KillAuraModule extends Module {
 
     public KillAuraModule() {
         super(Category.COMBAT);
+        range.setVisibleWhen(() -> mode.is("Standard"));
+        clipRange.setVisibleWhen(() -> mode.is("Packet Clip"));
         attacksPerSecond.setVisibleWhen(() -> !autoCooldown.get());
     }
 
@@ -66,8 +73,15 @@ public final class KillAuraModule extends Module {
             return;
         }
 
-        mc.gameMode.attack(mc.player, target);
-        mc.player.swing(InteractionHand.MAIN_HAND);
+        if (mode.is("Packet Clip") && !ReachModule.queueClipAttack(target, clipRange.get())) {
+            return;
+        }
+        try {
+            mc.gameMode.attack(mc.player, target);
+            mc.player.swing(InteractionHand.MAIN_HAND);
+        } finally {
+            ReachModule.afterAttack();
+        }
         nextAttackAt = autoCooldown.get()
                 ? now
                 : now + Math.max(50L, Math.round(1000.0 / attacksPerSecond.get()));
@@ -75,7 +89,8 @@ public final class KillAuraModule extends Module {
 
     private LivingEntity findTarget() {
         LivingEntity nearest = null;
-        double nearestDistance = range.get() * range.get();
+        double selectedRange = mode.is("Packet Clip") ? clipRange.get() : range.get();
+        double nearestDistance = selectedRange * selectedRange;
         for (Entity entity : mc.level.entitiesForRendering()) {
             if (!(entity instanceof LivingEntity living) || !validTarget(living)) {
                 continue;

@@ -43,6 +43,7 @@ public final class AttackHelperModule extends Module {
     public AttackHelperModule() {
         super(Category.COMBAT);
         instance = this;
+        hitDelay.setVisibleWhen(() -> !autoCooldown.get());
     }
 
     @Override
@@ -95,7 +96,9 @@ public final class AttackHelperModule extends Module {
             mc.gameMode.attack(mc.player, target);
             mc.player.swing(InteractionHand.MAIN_HAND);
         }
-        nextHitAtMs = now + (long) (hitDelay.random() * 1000.0);
+        nextHitAtMs = autoCooldown.get()
+                ? now
+                : now + (long) (hitDelay.random() * 1000.0);
     }
 
     private static boolean canRun() {

@@ -15,7 +15,7 @@ public final class KeepSprintModule extends Module {
     private static final Minecraft mc = Minecraft.getInstance();
 
     public KeepSprintModule() {
-        super(Category.MOVEMENT);
+        super(Category.PLAYER);
     }
 
     @Override

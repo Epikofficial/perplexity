@@ -21,7 +21,7 @@ public final class GuiWalkModule extends Module {
     private static final Minecraft mc = Minecraft.getInstance();
 
     public GuiWalkModule() {
-        super(Category.MOVEMENT);
+        super(Category.PLAYER);
     }
 
     @Override

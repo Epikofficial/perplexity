@@ -8,6 +8,10 @@ this is pretty much a fun sidequest. im tryna get as many people as possible to 
 
 ## building
 
+The Reach module has a **Packet Clip** mode with a separate distance slider up to 128 blocks. It sends a bounded series of movement packets before an extended attack and returns afterward. Standard Reach keeps its original 3–6 block slider. Packet Clip is off by default, requires a target the client can pick, and may be rejected by a server's movement or anti-cheat checks; it is not guaranteed infinite reach. Criticals packet spoofing is skipped for clip attacks so the two movement sequences do not interfere.
+
+KillAura also has an independent **Packet Clip** mode with its own range slider up to 128 blocks. It uses the same bounded movement sequence for distant targets, while its Standard range and existing targeting settings remain unchanged. Targets must still be loaded by the client; servers may reject or correct the movement.
+
 requires Git and a compatible JDK.
 
 ```bash

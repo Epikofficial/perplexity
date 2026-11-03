@@ -1,6 +1,7 @@
 package dev.perplexity.client.impl.modules.misc;
 import dev.perplexity.client.utils.Obf;
 
+import dev.perplexity.client.event.PlayerEvents;
 import dev.perplexity.client.module.Category;
 import dev.perplexity.client.module.Module;
 import dev.perplexity.client.module.setting.NumberSetting;
@@ -31,7 +32,10 @@ public final class BottleHelperModule extends Module {
     }
 
     @Override
-    protected void onTick() {
+    protected void onPlayerTick(PlayerEvents.TickEvent event) {
+        if (event.phase() != PlayerEvents.Phase.BEFORE) {
+            return;
+        }
         if (mc.player == null || mc.level == null || mc.gameMode == null) {
             wasActive = false;
             return;

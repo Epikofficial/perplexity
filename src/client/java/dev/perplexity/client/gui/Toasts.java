@@ -14,6 +14,7 @@ import net.minecraft.sounds.SoundEvent;
 
 import java.util.ArrayList;
 import java.util.List;
+import java.awt.Color;
 
 /**
  * Bottom-right toggle toasts. At most four show at once, newest at the bottom; each slides in
@@ -26,13 +27,12 @@ public final class Toasts {
     private static final long SLIDE_MS = 380L;
     private static final long FADE_MS = 600L;
 
-    private static final float TOAST_WIDTH = 168.0F;
-    private static final float TOAST_HEIGHT = 28.0F;
+    private static final float TOAST_WIDTH = 150.0F;
+    private static final float TOAST_HEIGHT = 30.0F;
     private static final float MARGIN = 12.0F;
-    private static final float STACK_GAP = 6.0F;
-    private static final float PILL_HEIGHT = 16.0F;
-    private static final float NAME_SIZE = 9.0F;
-    private static final float PILL_SIZE = 8.0F;
+    private static final float STACK_GAP = 5.0F;
+    private static final float NAME_SIZE = 8.5F;
+    private static final float DETAIL_SIZE = 6.5F;
 
     private static final SoundEvent CLICK =
             SoundEvent.createVariableRangeEvent(Identifier.fromNamespaceAndPath("perplexity", "click"));
@@ -49,6 +49,8 @@ public final class Toasts {
         if (module == null || !PopupsModule.enabled()) {
             return;
         }
+        // Rapid toggles update one toast instead of stacking contradictory ON/OFF cards.
+        queue.removeIf(toast -> toast.module() == module);
         queue.add(new Toast(module, null, on, System.currentTimeMillis()));
         while (queue.size() > MAX_VISIBLE) {
             queue.remove(0);
@@ -119,30 +121,51 @@ public final class Toasts {
                         ? toast.module().getDisplayName()
                         : toast.notice();
 
-                VGRenderer.roundedRect(x, y, TOAST_WIDTH, TOAST_HEIGHT, GlassTheme.RADIUS_SM,
-                        GlassTheme.scaleAlpha(GlassTheme.surfacePanel(), alpha));
-                if (toast.on()) {
-                    VGRenderer.roundedRect(x, y, 2.5F, TOAST_HEIGHT, 1.0F,
-                            GlassTheme.scaleAlpha(GlassTheme.accent(), alpha));
-                }
-                VGRenderer.textLeft(label, x + 10.0F, y + TOAST_HEIGHT / 2.0F,
-                        NAME_SIZE, VGFont.face(),
-                        GlassTheme.scaleAlpha(GlassTheme.textPrimary(), alpha));
+                float radius = GlassTheme.RADIUS_LG;
+                VGRenderer.shadow(x, y, TOAST_WIDTH, TOAST_HEIGHT, radius, 8.0F,
+                        new Color(0, 0, 0, Math.round(90.0F * alpha)));
+                VGRenderer.roundedRect(x, y, TOAST_WIDTH, TOAST_HEIGHT, radius,
+                        GlassTheme.scaleAlpha(GlassTheme.panelBorder(), alpha));
+                VGRenderer.verticalGradient(x + 1.0F, y + 1.0F,
+                        TOAST_WIDTH - 2.0F, TOAST_HEIGHT - 2.0F, radius - 1.0F,
+                        GlassTheme.scaleAlpha(GlassTheme.surfacePanel(), alpha),
+                        GlassTheme.scaleAlpha(GlassTheme.surfacePanelBottom(), alpha));
 
-                String state = toast.on() ? "ON" : "OFF";
-                float pillPad = 8.0F;
-                float pillWidth = VGRenderer.textWidth(state,
-                        PILL_SIZE, VGFont.face(), 0.0F) + pillPad * 2.0F;
-                float pillX = x + TOAST_WIDTH - 8.0F - pillWidth;
-                float pillY = y + (TOAST_HEIGHT - PILL_HEIGHT) / 2.0F;
-                VGRenderer.roundedRect(pillX, pillY, pillWidth, PILL_HEIGHT, GlassTheme.RADIUS_SM,
-                        toast.on()
-                                ? GlassTheme.scaleAlpha(GlassTheme.accent(), 0.95F * alpha)
-                                : GlassTheme.scaleAlpha(GlassTheme.interactiveMuted(), 0.7F * alpha));
-                VGRenderer.textCentered(state, pillX + pillWidth / 2.0F, pillY + PILL_HEIGHT / 2.0F,
-                        PILL_SIZE, VGFont.face(),
-                        GlassTheme.scaleAlpha(toast.on()
-                                ? GlassTheme.textOnAccent() : GlassTheme.textMuted(), alpha));
+                if (toast.module() == null) {
+                    VGRenderer.circle(x + 11.0F, y + TOAST_HEIGHT * 0.5F, 3.0F,
+                            GlassTheme.scaleAlpha(GlassTheme.accent(), alpha));
+                    VGRenderer.textLeft(label, x + 20.0F, y + TOAST_HEIGHT * 0.5F,
+                            NAME_SIZE, VGFont.mediumFace(),
+                            GlassTheme.scaleAlpha(GlassTheme.textPrimary(), alpha));
+                } else {
+                    float iconX = x + 13.0F;
+                    float iconY = y + TOAST_HEIGHT * 0.5F;
+                    Color iconColor = toast.on() ? GlassTheme.accent() : GlassTheme.interactiveMuted();
+                    VGRenderer.circle(iconX, iconY, 6.0F,
+                            GlassTheme.scaleAlpha(iconColor, alpha));
+                    if (toast.on()) {
+                        VGRenderer.line(iconX - 2.4F, iconY, iconX - 0.5F, iconY + 2.0F,
+                                1.2F, GlassTheme.scaleAlpha(GlassTheme.textOnAccent(), alpha));
+                        VGRenderer.line(iconX - 0.5F, iconY + 2.0F, iconX + 3.0F, iconY - 2.2F,
+                                1.2F, GlassTheme.scaleAlpha(GlassTheme.textOnAccent(), alpha));
+                    } else {
+                        VGRenderer.line(iconX - 2.3F, iconY, iconX + 2.3F, iconY,
+                                1.2F, GlassTheme.scaleAlpha(GlassTheme.textMuted(), alpha));
+                    }
+
+                    VGRenderer.textLeft(label, x + 25.0F, y + 10.0F,
+                            NAME_SIZE, VGFont.mediumFace(),
+                            GlassTheme.scaleAlpha(GlassTheme.textPrimary(), alpha));
+                    VGRenderer.textLeft(toast.on() ? "Enabled" : "Disabled",
+                            x + 25.0F, y + 21.0F, DETAIL_SIZE, VGFont.face(),
+                            GlassTheme.scaleAlpha(toast.on()
+                                    ? GlassTheme.accentBright() : GlassTheme.textMuted(), alpha));
+                }
+
+                float remaining = clamp01(1.0F - (float) age / LIFETIME_MS);
+                VGRenderer.roundedRect(x + 5.0F, y + TOAST_HEIGHT - 2.0F,
+                        (TOAST_WIDTH - 10.0F) * remaining, 1.0F, 0.5F,
+                        GlassTheme.accent(0.55F * alpha));
             }
 
             VGRenderer.restore();

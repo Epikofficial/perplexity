@@ -116,6 +116,8 @@ public final class Panel {
     private boolean editMode;
     /** Set once the user drags the panel somewhere, so the grid stops managing its position. */
     private boolean placed;
+    /** Grid slots ease toward layout changes; user-placed panels bypass this entirely. */
+    private boolean gridPositionInitialized;
     /** Set while the current press is actually relocating the panel, so a plain click does not pin it. */
     private boolean moved;
     private float scroll;
@@ -200,6 +202,21 @@ public final class Panel {
     public void setPosition(float x, float y) {
         this.x = x;
         this.y = y;
+    }
+
+    /** Smoothly follows a grid slot as rows resize or the window changes shape. */
+    public void approachGridPosition(float targetX, float targetY, float amount) {
+        if (!gridPositionInitialized) {
+            x = targetX;
+            y = targetY;
+            gridPositionInitialized = true;
+            return;
+        }
+        float clamped = Math.max(0.0F, Math.min(1.0F, amount));
+        x += (targetX - x) * clamped;
+        y += (targetY - y) * clamped;
+        if (Math.abs(targetX - x) < 0.02F) x = targetX;
+        if (Math.abs(targetY - y) < 0.02F) y = targetY;
     }
 
     public void setWidth(float width) {
@@ -443,7 +460,7 @@ public final class Panel {
         if (editMode) {
             VGRenderer.roundedRect(x + width - EDIT_BUTTON_WIDTH, y + 3.0F,
                     EDIT_BUTTON_WIDTH - 3.0F, GlassTheme.PANEL_HEADER_HEIGHT - 6.0F,
-                    GlassTheme.RADIUS_SM, GlassTheme.accent(0.28F));
+                    GlassTheme.RADIUS_MD, GlassTheme.accent(0.14F));
         }
         VGRenderer.textLeft(editGlyph,
                 x + width - GlassTheme.PADDING - 2.0F - glyphWidth,
@@ -488,14 +505,28 @@ public final class Panel {
             float enabled = animate(enabledAnimations, module, module.isEnabled() ? 1.0F : 0.0F, ENABLE_SPEED);
 
             if (editMode) {
-                VGRenderer.roundedRect(x + GlassTheme.PADDING * 0.5F, cursor,
-                        width - GlassTheme.PADDING, GlassTheme.MODULE_HEIGHT,
-                        GlassTheme.RADIUS_SM, module.isVisibleInMenu()
-                                ? GlassTheme.accent(0.34F) : GlassTheme.interactiveMuted());
-                VGRenderer.roundedOutline(x + GlassTheme.PADDING * 0.5F, cursor,
-                        width - GlassTheme.PADDING, GlassTheme.MODULE_HEIGHT,
-                        GlassTheme.RADIUS_SM, 1.0F, module.isVisibleInMenu()
-                                ? GlassTheme.accent(0.72F) : GlassTheme.panelBorder());
+                float rowX = x + GlassTheme.PADDING * 0.5F;
+                float rowW = width - GlassTheme.PADDING;
+                boolean visible = module.isVisibleInMenu();
+
+                // Edit mode should read like a tidy visibility list, not a stack of neon input
+                // fields. A quiet wash marks visible modules and the compact switch at the right
+                // carries the actual state.
+                VGRenderer.roundedRect(rowX, cursor, rowW, GlassTheme.MODULE_HEIGHT,
+                        GlassTheme.RADIUS_MD, visible
+                                ? GlassTheme.accent(0.12F)
+                                : GlassTheme.scaleAlpha(GlassTheme.groupFill(), 0.72F));
+                float toggleW = 18.0F;
+                float toggleH = 10.0F;
+                float toggleX = x + width - GlassTheme.PADDING - toggleW;
+                float toggleY = cursor + (GlassTheme.MODULE_HEIGHT - toggleH) * 0.5F;
+                VGRenderer.roundedRect(toggleX, toggleY, toggleW, toggleH,
+                        toggleH * 0.5F, visible
+                                ? GlassTheme.accent(0.72F)
+                                : GlassTheme.interactiveMuted());
+                float knobX = visible ? toggleX + toggleW - 5.0F : toggleX + 5.0F;
+                VGRenderer.circle(knobX, toggleY + toggleH * 0.5F, 3.2F,
+                        visible ? GlassTheme.textOnAccent() : GlassTheme.textMuted());
             // Enabled state is a solid gradient bar behind the row, white label above it.
             } else if (enabled > 0.01F) {
                 VGRenderer.verticalGradient(x + GlassTheme.PADDING * 0.5F, cursor,
@@ -558,7 +589,7 @@ public final class Panel {
             }
 
             Color nameColor = editMode
-                    ? (module.isVisibleInMenu() ? GlassTheme.textPrimary() : GlassTheme.textMuted())
+                    ? (module.isVisibleInMenu() ? GlassTheme.textSecondary() : GlassTheme.textMuted())
                     : GlassTheme.scaleAlpha(GlassTheme.lerp(GlassTheme.textSecondary(),
                             GlassTheme.textPrimary(), enabled), contentAlpha);
             VGRenderer.textLeft(module.getDisplayName(), x + GlassTheme.TEXT_INSET,

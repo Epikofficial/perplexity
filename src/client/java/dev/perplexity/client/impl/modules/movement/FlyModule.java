@@ -1,6 +1,7 @@
 package dev.perplexity.client.impl.modules.movement;
 import dev.perplexity.client.utils.Obf;
 
+import dev.perplexity.client.event.PlayerEvents;
 import dev.perplexity.client.module.Category;
 import dev.perplexity.client.module.Module;
 import dev.perplexity.client.module.setting.BooleanSetting;
@@ -23,6 +24,7 @@ import net.minecraft.world.phys.Vec3;
  */
 public final class FlyModule extends Module {
     private static final Minecraft mc = Minecraft.getInstance();
+    private static FlyModule instance;
 
     private static final double DIAGONAL = 0.7071;
 
@@ -40,6 +42,12 @@ public final class FlyModule extends Module {
 
     public FlyModule() {
         super(Category.MOVEMENT);
+        instance = this;
+    }
+
+    /** Used by movement-sensitive modules to avoid treating controlled flight as a real fall. */
+    public static boolean isActive() {
+        return instance != null && instance.isEnabled();
     }
 
     @Override
@@ -65,7 +73,10 @@ public final class FlyModule extends Module {
     }
 
     @Override
-    protected void onTick() {
+    protected void onPlayerTick(PlayerEvents.TickEvent event) {
+        if (event.phase() != PlayerEvents.Phase.AFTER) {
+            return;
+        }
         if (mc.player == null || mc.level == null) {
             return;
         }

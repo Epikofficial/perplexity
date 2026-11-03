@@ -1,4 +1,6 @@
 package dev.perplexity.client.impl.modules.misc;
+
+import dev.perplexity.client.event.PlayerEvents;
 import dev.perplexity.client.utils.Obf;
 
 import dev.perplexity.client.module.Category;
@@ -61,7 +63,10 @@ public final class ProtectionModule extends Module {
     }
 
     @Override
-    protected void onTick() {
+    protected void onPlayerTick(PlayerEvents.TickEvent event) {
+        if (event.phase() != PlayerEvents.Phase.AFTER) {
+            return;
+        }
         if (mc.level == null) {
             return;
         }

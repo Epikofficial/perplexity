@@ -1,5 +1,6 @@
 package dev.perplexity.client.mixin.combat;
 
+import dev.perplexity.client.event.PlayerEvents;
 import dev.perplexity.client.impl.modules.combat.CriticalsModule;
 import dev.perplexity.client.impl.modules.combat.ReachModule;
 
@@ -17,6 +18,10 @@ import org.spongepowered.asm.mixin.injection.callback.CallbackInfo;
 public abstract class MultiPlayerGameModeCriticalsMixin {
     @Inject(method = "attack", at = @At("HEAD"), cancellable = true)
     private void perplexity$criticalBeforeAttack(Player player, Entity target, CallbackInfo ci) {
+        if (PlayerEvents.fireAttack(player, target, PlayerEvents.Phase.BEFORE).cancelled()) {
+            ci.cancel();
+            return;
+        }
         if (!ReachModule.allowAttack(target)) {
             ci.cancel();
             return;
@@ -33,5 +38,6 @@ public abstract class MultiPlayerGameModeCriticalsMixin {
     @Inject(method = "attack", at = @At("RETURN"))
     private void perplexity$returnAfterClip(Player player, Entity target, CallbackInfo ci) {
         ReachModule.afterAttack();
+        PlayerEvents.fireAttack(player, target, PlayerEvents.Phase.AFTER);
     }
 }

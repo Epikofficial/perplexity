@@ -53,6 +53,10 @@ public final class ClickGuiScreen extends Screen {
     /** Index of the front-most panel. The list order never changes; this only drives draw order. */
     private int focusedPanel = -1;
     private boolean accountOpen;
+    private long lastLayoutNanos;
+
+    /** Time for managed panels to settle into a resized/reflowed grid slot. */
+    private static final float LAYOUT_FOLLOW_SECONDS = 0.12F;
 
     private float lastMouseX;
     private float lastMouseY;
@@ -123,7 +127,9 @@ public final class ClickGuiScreen extends Screen {
             // Draw back-to-front with the focused panel last, so raising one never reflows the grid.
             // Off-screen panels are culled outright: same pixels, no tessellation for them.
             for (int i = 0; i < panels.size(); i++) {
-                if (i != focusedPanel && onScreen(panels.get(i), uiWidth, uiHeight)) {
+                if (i != focusedPanel
+                        && TabControlModule.isShown(panels.get(i).getCategory())
+                        && onScreen(panels.get(i), uiWidth, uiHeight)) {
                     panels.get(i).render(mouseX, mouseY);
                 }
             }
@@ -156,6 +162,15 @@ public final class ClickGuiScreen extends Screen {
     }
 
     private void layoutPanels(float uiWidth, float uiHeight) {
+        long now = System.nanoTime();
+        float dt = lastLayoutNanos == 0L
+                ? 1.0F / 60.0F
+                : Math.min(0.05F, (now - lastLayoutNanos) / 1_000_000_000.0F);
+        lastLayoutNanos = now;
+        // Exponential follow is framerate-independent. Capping dt above is important after the
+        // window was minimized: the first restored frame eases into place instead of teleporting.
+        float layoutFollow = 1.0F - (float) Math.exp(-dt / LAYOUT_FOLLOW_SECONDS);
+
         visiblePanels.clear();
         for (Panel panel : panels) {
             if (TabControlModule.isShown(panel.getCategory())) {
@@ -196,7 +211,7 @@ public final class ClickGuiScreen extends Screen {
                 // Slots are still computed for every panel, so the grid stays put as panels are
                 // dragged out of it — but a panel the user has placed is left where they dropped it.
                 if (panel != dragging && !panel.isPlaced()) {
-                    panel.setPosition(slotX, y);
+                    panel.approachGridPosition(slotX, y, layoutFollow);
                 }
             }
             y += rowHeights[row] + GlassTheme.PANEL_SPACING;

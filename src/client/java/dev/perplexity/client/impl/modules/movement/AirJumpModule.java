@@ -1,5 +1,6 @@
 package dev.perplexity.client.impl.modules.movement;
 
+import dev.perplexity.client.event.PlayerEvents;
 import dev.perplexity.client.module.Category;
 import dev.perplexity.client.module.Module;
 import dev.perplexity.client.module.setting.BooleanSetting;
@@ -11,7 +12,6 @@ import net.minecraft.network.protocol.game.ServerboundMovePlayerPacket;
 /** Lets each new jump-key press take Minecraft's normal ground-jump path while airborne. */
 public final class AirJumpModule extends Module {
     private static final Minecraft mc = Minecraft.getInstance();
-    private static AirJumpModule instance;
 
     private final BooleanSetting onGroundPackets = add(new BooleanSetting("On Ground Packets",
             true));
@@ -20,7 +20,6 @@ public final class AirJumpModule extends Module {
 
     public AirJumpModule() {
         super(Category.MOVEMENT);
-        instance = this;
     }
 
     @Override
@@ -33,12 +32,13 @@ public final class AirJumpModule extends Module {
         jumpDown = false;
     }
 
-    /** Runs before player ticking and movement packets, matching the timing of a vanilla jump. */
-    public static void preTick() {
-        if (instance == null || !instance.isEnabled()) {
+    /** Runs at the start of LocalPlayer.tick, matching the timing of a vanilla jump. */
+    @Override
+    protected void onPlayerTick(PlayerEvents.TickEvent event) {
+        if (event.phase() != PlayerEvents.Phase.BEFORE) {
             return;
         }
-        instance.tryJump();
+        tryJump();
     }
 
     private void tryJump() {

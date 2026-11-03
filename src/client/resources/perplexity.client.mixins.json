@@ -5,6 +5,7 @@
 	"client": [
 		"ExampleClientMixin",
 		"MixinGuiRenderer",
+		"lifecycle.MinecraftTickEventsMixin",
 		"anchor.MinecraftAnchorInputMixin",
 		"anchor.MultiPlayerGameModeAnchorMixin",
 		"combat.ClientPacketListenerKnockbackMixin",
@@ -14,7 +15,12 @@
 		"misc.BottleUseMixin",
 		"misc.ChatListenerAutoGgMixin",
 		"movement.KeyMappingAccessor",
+		"movement.ConnectionFakeLagMixin",
+		"movement.DeltaTrackerTimerMixin",
 		"player.LocalPlayerPushMixin",
+		"player.LocalPlayerEventsMixin",
+		"player.LivingEntityJumpEventsMixin",
+		"player.ClientPacketListenerPlayerEventsMixin",
 		"player.ClientPacketListenerWindChargeMixin",
 		"protect.PlayerTabOverlayProtectMixin",
 		"protect.EntityNametagProtectMixin",
@@ -32,7 +38,8 @@
 		"render.BlockStateBaseOreMixin",
 		"render.BlockFaceOreMixin",
 		"render.BlockEmissionOreMixin",
-		"render.GameRendererCameraMixin"
+		"render.GameRendererCameraMixin",
+		"render.GameRendererFrameEventsMixin"
 	],
 	"injectors": {
 		"defaultRequire": 1

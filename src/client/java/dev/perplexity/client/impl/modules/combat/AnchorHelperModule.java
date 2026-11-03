@@ -1,6 +1,7 @@
 package dev.perplexity.client.impl.modules.combat;
 import dev.perplexity.client.utils.Obf;
 
+import dev.perplexity.client.event.PlayerEvents;
 import dev.perplexity.client.module.Category;
 import dev.perplexity.client.module.Module;
 import dev.perplexity.client.module.setting.BooleanSetting;
@@ -114,7 +115,10 @@ public final class AnchorHelperModule extends Module {
     }
 
     @Override
-    protected void onTick() {
+    protected void onPlayerTick(PlayerEvents.TickEvent event) {
+        if (event.phase() != PlayerEvents.Phase.AFTER) {
+            return;
+        }
         // Lifecycle cleanup only: actions run before vanilla input, never after a use packet.
         if (changedContext()) {
             ownAnchors.clear();

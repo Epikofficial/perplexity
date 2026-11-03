@@ -10,6 +10,8 @@ import dev.perplexity.client.render.vg.VGFont;
 
 import org.lwjgl.glfw.GLFW;
 
+import java.util.Locale;
+
 /**
  * Holds the menu opener key. The row itself is the feature; the toggle carries no behaviour.
  */
@@ -29,6 +31,16 @@ public final class MenuKeyModule extends Module {
 
     public static int openKey() {
         return instance == null ? GLFW.GLFW_KEY_RIGHT_SHIFT : instance.key.get();
+    }
+
+    public static void setOpenKey(int keyCode) {
+        if (instance != null) {
+            instance.key.set(keyCode);
+        }
+    }
+
+    public static String openKeyName() {
+        return instance == null ? "RSHIFT" : instance.key.displayName().toUpperCase(Locale.ROOT);
     }
 
     /** Active typeface id for the menu renderer. */

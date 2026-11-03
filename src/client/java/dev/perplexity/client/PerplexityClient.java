@@ -6,6 +6,10 @@ import dev.perplexity.client.gui.auth.AuthScreen;
 import dev.perplexity.client.gui.clickgui.ClickGuiScreen;
 import dev.perplexity.client.auth.AuthGate;
 import dev.perplexity.client.config.ConfigManager;
+import dev.perplexity.client.command.ClientCommandHandler;
+import dev.perplexity.client.event.ClientEvents;
+import dev.perplexity.client.event.PlayerEvents;
+import dev.perplexity.client.event.RenderEvents;
 import dev.perplexity.client.module.ModuleManager;
 import dev.perplexity.client.impl.modules.combat.AnchorHelperModule;
 import dev.perplexity.client.impl.modules.combat.KnockbackModule;
@@ -14,6 +18,7 @@ import dev.perplexity.client.impl.modules.combat.AttackHelperModule;
 import dev.perplexity.client.impl.modules.combat.KillAuraModule;
 import dev.perplexity.client.impl.modules.combat.CriticalsModule;
 import dev.perplexity.client.impl.modules.combat.ReachModule;
+import dev.perplexity.client.impl.modules.combat.TargetStrafeModule;
 import dev.perplexity.client.impl.modules.misc.BottleHelperModule;
 import dev.perplexity.client.impl.modules.misc.ProtectionModule;
 import dev.perplexity.client.impl.modules.misc.AutoGgModule;
@@ -22,8 +27,10 @@ import dev.perplexity.client.impl.modules.movement.KeepSprintModule;
 import dev.perplexity.client.impl.modules.movement.AirJumpModule;
 import dev.perplexity.client.impl.modules.movement.BoatGlideModule;
 import dev.perplexity.client.impl.modules.movement.FlyModule;
+import dev.perplexity.client.impl.modules.movement.FakeLagModule;
 import dev.perplexity.client.impl.modules.movement.GuiWalkModule;
 import dev.perplexity.client.impl.modules.movement.SprintModule;
+import dev.perplexity.client.impl.modules.movement.TimerModule;
 import dev.perplexity.client.impl.modules.player.QuickRespawnModule;
 import dev.perplexity.client.impl.modules.player.FeatherFallModule;
 import dev.perplexity.client.impl.modules.player.NoPushModule;
@@ -40,8 +47,6 @@ import dev.perplexity.client.utils.rotation.RotationManager;
 
 import net.fabricmc.api.ClientModInitializer;
 import net.fabricmc.fabric.api.client.event.lifecycle.v1.ClientLifecycleEvents;
-import net.fabricmc.fabric.api.client.event.lifecycle.v1.ClientTickEvents;
-import net.fabricmc.fabric.api.client.rendering.v1.world.WorldRenderEvents;
 import net.minecraft.client.Minecraft;
 
 public class PerplexityClient implements ClientModInitializer {
@@ -57,9 +62,12 @@ public class PerplexityClient implements ClientModInitializer {
         ModuleManager.get().register(new KillAuraModule());
         ModuleManager.get().register(new ReachModule());
         ModuleManager.get().register(new CriticalsModule());
+        ModuleManager.get().register(new TargetStrafeModule());
         ModuleManager.get().register(new FlyModule());
+        ModuleManager.get().register(new FakeLagModule());
         ModuleManager.get().register(new AirJumpModule());
         ModuleManager.get().register(new SprintModule());
+        ModuleManager.get().register(new TimerModule());
         ModuleManager.get().register(new GuiWalkModule());
         ModuleManager.get().register(new KeepSprintModule());
         ModuleManager.get().register(new BoatGlideModule());
@@ -82,23 +90,26 @@ public class PerplexityClient implements ClientModInitializer {
         ModuleManager.get().register(tabs);
         ModuleManager.get().register(new PanicModule());
         ConfigManager.loadDefault();
+        ClientCommandHandler.install();
 
-        ClientTickEvents.END_CLIENT_TICK.register(this::onEndTick);
-        ClientLifecycleEvents.CLIENT_STOPPING.register(client -> ConfigManager.flush());
-        ClientTickEvents.START_CLIENT_TICK.register(minecraft -> {
-            AirJumpModule.preTick();
-            ClickHelperModule.preTick();
-            AttackHelperModule.preTick();
+        RenderEvents.installWorldBridge();
+        ClientEvents.onTick(event -> {
+            if (event.phase() == PlayerEvents.Phase.AFTER) {
+                onEndTick(event.minecraft());
+            }
         });
+        ClientLifecycleEvents.CLIENT_STOPPING.register(client -> ConfigManager.flush());
         // CHANGE_LOOK rotations have to be applied to the camera every frame, after the tick
         // rotation has been committed, with the frame's partial tick.
-        WorldRenderEvents.START_MAIN.register(context -> RotationManager.applyChangeLookRotation(
-            Minecraft.getInstance().getDeltaTracker().getGameTimeDeltaPartialTick(false)));
-        WorldRenderEvents.END_MAIN.register(context -> AttackHelperModule.onFrame());
+        RenderEvents.onWorld(event -> {
+            if (event.phase() == RenderEvents.WorldPhase.START_MAIN) {
+                RotationManager.applyChangeLookRotation(
+                    Minecraft.getInstance().getDeltaTracker().getGameTimeDeltaPartialTick(false));
+            }
+        });
     }
 
     private void onEndTick(Minecraft minecraft) {
-        ModuleManager.get().tick();
         RotationManager.tick(minecraft);
         ConfigManager.tick();
 

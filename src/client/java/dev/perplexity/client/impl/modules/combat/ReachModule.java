@@ -77,7 +77,7 @@ public final class ReachModule extends Module {
             return false;
         }
         double distanceToBox = target.getBoundingBox().distanceToSqr(mc.player.getEyePosition());
-        if (distanceToBox <= 6.0 * 6.0) {
+        if (distanceToBox <= VANILLA_REACH * VANILLA_REACH) {
             return true;
         }
         if (distanceToBox > maxRange * maxRange || mc.player.isPassenger()
@@ -105,7 +105,7 @@ public final class ReachModule extends Module {
             return true;
         }
         double distanceToBox = target.getBoundingBox().distanceToSqr(attacker.getEyePosition());
-        if (distanceToBox <= 6.0 * 6.0) {
+        if (distanceToBox <= VANILLA_REACH * VANILLA_REACH) {
             return true;
         }
         double maxRange = queued ? instance.queuedClipRange : instance.clipDistance.get();
@@ -153,6 +153,10 @@ public final class ReachModule extends Module {
         if (mc.getConnection() != null && mc.player != null) {
             int steps = (int) Math.ceil(origin.distanceTo(destination) / CLIP_STEP);
             sendPath(destination, origin, steps, mc.player.horizontalCollision);
+            // Packet Clip never moves the local player, so its temporary server-side path must
+            // not leave either side carrying fall distance after returning to the real position.
+            mc.getConnection().send(new ServerboundMovePlayerPacket.StatusOnly(true, false));
+            mc.player.fallDistance = 0.0;
         }
     }
 
@@ -160,7 +164,7 @@ public final class ReachModule extends Module {
         for (int i = 1; i <= steps; i++) {
             Vec3 point = from.lerp(to, (double) i / steps);
             mc.getConnection().send(new ServerboundMovePlayerPacket.Pos(
-                    point.x, point.y, point.z, false, horizontalCollision));
+                    point.x, point.y, point.z, true, horizontalCollision));
         }
     }
 

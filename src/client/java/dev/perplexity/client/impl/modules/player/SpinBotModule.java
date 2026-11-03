@@ -1,9 +1,11 @@
 package dev.perplexity.client.impl.modules.player;
 
+import dev.perplexity.client.event.PlayerEvents;
 import dev.perplexity.client.module.Category;
 import dev.perplexity.client.module.Module;
 import dev.perplexity.client.module.setting.NumberSetting;
 import dev.perplexity.client.utils.Obf;
+import dev.perplexity.client.utils.rotation.RotationManager;
 
 import net.minecraft.client.Minecraft;
 import net.minecraft.util.Mth;
@@ -40,7 +42,10 @@ public final class SpinBotModule extends Module {
     }
 
     @Override
-    protected void onTick() {
+    protected void onPlayerTick(PlayerEvents.TickEvent event) {
+        if (event.phase() != PlayerEvents.Phase.AFTER) {
+            return;
+        }
         if (mc.player == null || mc.level == null) {
             return;
         }
@@ -54,7 +59,9 @@ public final class SpinBotModule extends Module {
     }
 
     public static float packetYaw(float vanillaYaw) {
-        return instance != null && instance.isEnabled() ? instance.spinYaw : vanillaYaw;
+        return instance != null && instance.isEnabled() && !RotationManager.isRotating()
+                ? instance.spinYaw
+                : vanillaYaw;
     }
 
     @Override

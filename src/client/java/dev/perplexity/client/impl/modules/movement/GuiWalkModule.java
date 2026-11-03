@@ -1,6 +1,7 @@
 package dev.perplexity.client.impl.modules.movement;
 import dev.perplexity.client.utils.Obf;
 
+import dev.perplexity.client.event.PlayerEvents;
 import dev.perplexity.client.mixin.movement.KeyMappingAccessor;
 import dev.perplexity.client.module.Category;
 import dev.perplexity.client.module.Module;
@@ -25,7 +26,10 @@ public final class GuiWalkModule extends Module {
     }
 
     @Override
-    protected void onTick() {
+    protected void onPlayerTick(PlayerEvents.TickEvent event) {
+        if (event.phase() != PlayerEvents.Phase.BEFORE) {
+            return;
+        }
         if (mc.player == null || mc.level == null || mc.screen == null) {
             return;
         }

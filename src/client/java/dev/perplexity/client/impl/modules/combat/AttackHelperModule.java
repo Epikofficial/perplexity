@@ -1,6 +1,8 @@
 package dev.perplexity.client.impl.modules.combat;
 import dev.perplexity.client.utils.Obf;
 
+import dev.perplexity.client.event.PlayerEvents;
+import dev.perplexity.client.event.RenderEvents;
 import dev.perplexity.client.mixin.combat.MinecraftAttackInvoker;
 import dev.perplexity.client.module.Category;
 import dev.perplexity.client.module.Module;
@@ -24,7 +26,6 @@ import net.minecraft.world.phys.EntityHitResult;
  */
 public final class AttackHelperModule extends Module {
     private static final Minecraft mc = Minecraft.getInstance();
-    private static AttackHelperModule instance;
 
     private final ModeSetting detection = add(new ModeSetting("Detection", "Ticks",
             "Ticks", "Frames"));
@@ -42,7 +43,6 @@ public final class AttackHelperModule extends Module {
 
     public AttackHelperModule() {
         super(Category.COMBAT);
-        instance = this;
         hitDelay.setVisibleWhen(() -> !autoCooldown.get());
     }
 
@@ -51,21 +51,23 @@ public final class AttackHelperModule extends Module {
         nextHitAtMs = 0L;
     }
 
-    /** Per-frame entry point: only arms a swing, the next pre-tick fires it. */
-    public static void onFrame() {
-        if (instance != null && instance.isEnabled() && instance.detection.is("Frames")) {
-            instance.pendingFrameAttack = true;
+    /** Frame detection only arms a swing; the next player BEFORE phase fires it. */
+    @Override
+    protected void onFrame(RenderEvents.FrameEvent event) {
+        if (event.phase() == PlayerEvents.Phase.AFTER && detection.is("Frames")) {
+            pendingFrameAttack = true;
         }
     }
 
-    /** Pre-tick entry point, driving Ticks detection before the tick's movement packets. */
-    public static void preTick() {
-        if (instance == null || !instance.isEnabled()) {
+    /** Drives clicks from the exact start of LocalPlayer.tick. */
+    @Override
+    protected void onPlayerTick(PlayerEvents.TickEvent event) {
+        if (event.phase() != PlayerEvents.Phase.BEFORE) {
             return;
         }
-        if (instance.detection.is("Ticks") || instance.pendingFrameAttack) {
-            instance.pendingFrameAttack = false;
-            instance.tryAttack();
+        if (detection.is("Ticks") || pendingFrameAttack) {
+            pendingFrameAttack = false;
+            tryAttack();
         }
     }
 

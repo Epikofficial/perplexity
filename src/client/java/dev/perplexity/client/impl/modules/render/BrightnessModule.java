@@ -1,8 +1,8 @@
 package dev.perplexity.client.impl.modules.render;
 import dev.perplexity.client.utils.Obf;
 
-import dev.perplexity.client.module.Category;
-import dev.perplexity.client.module.Module;
+import dev.perplexity.client.event.PlayerEvents;
+import dev.perplexity.client.module.RenderModule;
 import dev.perplexity.client.utils.NightVision;
 
 /**
@@ -10,11 +10,11 @@ import dev.perplexity.client.utils.NightVision;
  * set), so pushing it higher is a no-op — an invisible, iconless effect is what actually
  * brightens caves.
  */
-public final class BrightnessModule extends Module {
+public final class BrightnessModule extends RenderModule {
     private final NightVision nightVision = new NightVision();
 
     public BrightnessModule() {
-        super(Category.RENDER);
+        super();
     }
 
     @Override
@@ -28,7 +28,10 @@ public final class BrightnessModule extends Module {
     }
 
     @Override
-    protected void onTick() {
+    protected void onPlayerTick(PlayerEvents.TickEvent event) {
+        if (event.phase() != PlayerEvents.Phase.AFTER) {
+            return;
+        }
         nightVision.tick();
     }
     @Override

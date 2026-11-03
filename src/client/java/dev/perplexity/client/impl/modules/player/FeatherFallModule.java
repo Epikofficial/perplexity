@@ -1,10 +1,12 @@
 package dev.perplexity.client.impl.modules.player;
 import dev.perplexity.client.utils.Obf;
 
+import dev.perplexity.client.event.PlayerEvents;
 import dev.perplexity.client.module.Category;
 import dev.perplexity.client.module.Module;
 import dev.perplexity.client.module.setting.BooleanSetting;
 import dev.perplexity.client.module.setting.DropdownSetting;
+import dev.perplexity.client.impl.modules.movement.FlyModule;
 
 import net.minecraft.client.Minecraft;
 import net.minecraft.core.BlockPos;
@@ -55,11 +57,26 @@ public final class FeatherFallModule extends Module {
     }
 
     @Override
-    protected void onTick() {
+    protected void onPlayerTick(PlayerEvents.TickEvent event) {
+        if (event.phase() != PlayerEvents.Phase.AFTER) {
+            return;
+        }
         if (mc.player == null || mc.level == null || mc.gameMode == null) {
             return;
         }
         mc.player.fallDistance = 0.0;
+
+        // Controlled downward Flight still looks like a normal fall to the server. Waiting for
+        // the near-ground threshold lets a few blocks accumulate, which some servers convert into
+        // a small landing hit. Keep its fall tracker reset throughout the flight instead.
+        if (FlyModule.isActive()) {
+            airFallDistance = 0.0;
+            if (groundSync.get() && mc.getConnection() != null
+                    && mc.player.getVehicle() == null && !mc.player.isFallFlying()) {
+                mc.getConnection().send(new ServerboundMovePlayerPacket.StatusOnly(true, false));
+            }
+            return;
+        }
 
         if (mc.player.onGround()) {
             airFallDistance = 0.0;

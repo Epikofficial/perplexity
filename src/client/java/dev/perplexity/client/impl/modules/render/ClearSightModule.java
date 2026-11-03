@@ -1,8 +1,7 @@
 package dev.perplexity.client.impl.modules.render;
 import dev.perplexity.client.utils.Obf;
 
-import dev.perplexity.client.module.Category;
-import dev.perplexity.client.module.Module;
+import dev.perplexity.client.module.RenderModule;
 
 import net.minecraft.client.player.AbstractClientPlayer;
 import net.minecraft.world.entity.LivingEntity;
@@ -11,11 +10,11 @@ import net.minecraft.world.entity.LivingEntity;
  * Renders invisible players as if they were visible: body and nametag.
  * Only affects rendering on this client; the invisibility effect itself is untouched.
  */
-public final class ClearSightModule extends Module {
+public final class ClearSightModule extends RenderModule {
     private static ClearSightModule instance;
 
     public ClearSightModule() {
-        super(Category.RENDER);
+        super();
         instance = this;
     }
 

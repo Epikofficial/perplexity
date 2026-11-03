@@ -114,6 +114,17 @@ public final class RotationManager {
         return Optional.of(serverRotationInitialized ? currentRotation.nearestTo(serverRotation) : currentRotation);
     }
 
+    /** Visual-only aim for the local player model; never changes the camera rotation. */
+    public static synchronized Optional<Rotation> silentModelRotation(float partialTick) {
+        if (hasActionHold()) {
+            return actionTarget.mode() == RotationMode.SILENT
+                ? Optional.of(actionRotation) : Optional.empty();
+        }
+        if (currentRotation == null || mode() != RotationMode.SILENT) return Optional.empty();
+        Rotation from = previousRotation == null ? currentRotation : previousRotation;
+        return Optional.of(from.interpolate(currentRotation, partialTick, partialTick));
+    }
+
     public static synchronized float packetYaw(float vanillaYaw) {
         Rotation rotation = packetRotation().orElse(new Rotation(vanillaYaw, 0f));
         return serverRotationInitialized ? rotation.nearestTo(serverRotation).yaw() : rotation.yaw();
@@ -147,6 +158,10 @@ public final class RotationManager {
 
     public static synchronized RotationTarget activeTarget() {
         return activeRequest == null ? null : activeRequest.target;
+    }
+
+    public static synchronized boolean ownsActiveRequest(Object owner) {
+        return activeRequest != null && activeRequest.owner == owner;
     }
 
     public static synchronized boolean isRotating() {

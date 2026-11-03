@@ -1,8 +1,8 @@
 package dev.perplexity.client.impl.modules.render;
 import dev.perplexity.client.utils.Obf;
 
-import dev.perplexity.client.module.Category;
-import dev.perplexity.client.module.Module;
+import dev.perplexity.client.event.PlayerEvents;
+import dev.perplexity.client.module.RenderModule;
 import dev.perplexity.client.module.setting.BooleanSetting;
 import dev.perplexity.client.utils.NightVision;
 
@@ -18,7 +18,7 @@ import java.util.Set;
  * Each ore family, storage and the extras pool toggle separately. Chunks rebuild on toggle;
  * gamma is restored on disable.
  */
-public final class OreViewModule extends Module {
+public final class OreViewModule extends RenderModule {
     private static final Minecraft mc = Minecraft.getInstance();
     private static OreViewModule instance;
 
@@ -64,7 +64,7 @@ public final class OreViewModule extends Module {
     private final NightVision nightVision = new NightVision();
 
     public OreViewModule() {
-        super(Category.RENDER);
+        super();
         instance = this;
     }
 
@@ -84,7 +84,10 @@ public final class OreViewModule extends Module {
     }
 
     @Override
-    protected void onTick() {
+    protected void onPlayerTick(PlayerEvents.TickEvent event) {
+        if (event.phase() != PlayerEvents.Phase.AFTER) {
+            return;
+        }
         nightVision.tick();
     }
 

@@ -1,6 +1,7 @@
 package dev.perplexity.client.impl.modules.combat;
 import dev.perplexity.client.utils.Obf;
 
+import dev.perplexity.client.event.PlayerEvents;
 import dev.perplexity.client.mixin.combat.MinecraftAttackInvoker;
 import dev.perplexity.client.module.Category;
 import dev.perplexity.client.module.Module;
@@ -34,7 +35,6 @@ import java.util.concurrent.ThreadLocalRandom;
  */
 public final class ClickHelperModule extends Module {
     private static final Minecraft mc = Minecraft.getInstance();
-    private static ClickHelperModule instance;
 
     private final DropdownSetting mode = add(new DropdownSetting("Mode", "Normal",
             "Normal", "Karhu"));
@@ -49,7 +49,6 @@ public final class ClickHelperModule extends Module {
 
     public ClickHelperModule() {
         super(Category.COMBAT);
-        instance = this;
     }
 
     @Override
@@ -57,12 +56,13 @@ public final class ClickHelperModule extends Module {
         ticksSinceClick = Integer.MAX_VALUE / 2;
     }
 
-    /** Pre-tick entry point, driving every click before the tick's movement packets. */
-    public static void preTick() {
-        if (instance == null || !instance.isEnabled()) {
+    /** Drives every click from the exact start of LocalPlayer.tick. */
+    @Override
+    protected void onPlayerTick(PlayerEvents.TickEvent event) {
+        if (event.phase() != PlayerEvents.Phase.BEFORE) {
             return;
         }
-        instance.doClicks(instance.mode.is("Karhu"));
+        doClicks(mode.is("Karhu"));
     }
 
     private void doClicks(boolean humanized) {

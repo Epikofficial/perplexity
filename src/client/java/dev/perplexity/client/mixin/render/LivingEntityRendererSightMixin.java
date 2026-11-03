@@ -1,7 +1,9 @@
 package dev.perplexity.client.mixin.render;
 
 import dev.perplexity.client.impl.modules.render.ClearSightModule;
+import dev.perplexity.client.utils.rotation.RotationManager;
 
+import net.minecraft.client.Minecraft;
 import net.minecraft.client.renderer.entity.LivingEntityRenderer;
 import net.minecraft.client.renderer.entity.state.LivingEntityRenderState;
 import net.minecraft.world.entity.LivingEntity;
@@ -24,6 +26,14 @@ public abstract class LivingEntityRendererSightMixin {
         if (ClearSightModule.reveal(entity)) {
             state.isInvisible = false;
             state.isInvisibleToPlayer = false;
+        }
+        if (entity == Minecraft.getInstance().player) {
+            RotationManager.silentModelRotation(partialTick).ifPresent(rotation -> {
+                // Render-state only: turn the model toward the silent aim, not the view.
+                state.bodyRot = rotation.yaw();
+                state.yRot = 0.0F;
+                state.xRot = rotation.pitch();
+            });
         }
     }
 
